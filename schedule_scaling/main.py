@@ -204,6 +204,7 @@ if __name__ == "__main__":
     while True:
         logging.debug("Waiting until the next minute")
         sleep(get_wait_sec())
+
         logging.debug("Getting deployments")
         for d, s in deployments_to_scale().items():
             process_deployment(d, s)
