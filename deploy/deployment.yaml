@@ -62,7 +62,7 @@ spec:
         runAsUser: 1000
       containers:
       - name: kube-schedule-scaler
-        image: "citizensadvice/kube-schedule-scaler:latest"
+        image: "hoopla/kube-schedule-scaler:latest"
         imagePullPolicy: Always
         resources:
           limits:

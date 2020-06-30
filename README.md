@@ -9,7 +9,7 @@ the traffic volume is distributed across different time periods.
 ## Installation
 
 ```
-$ kubectl apply -f https://github.com/citizensadvice/kube-schedule-scaler/raw/master/deploy/deployment.yaml
+$ kubectl apply -f deploy/deployment.yaml
 ```
 
 ## Usage
