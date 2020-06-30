@@ -64,7 +64,7 @@ def deployments_to_scale():
             f_deployment = str(namespace + "/" + str(deployment))
 
             schedule_actions = parse_schedules(annotations.get(
-                "hoopla/schedule-actions", "[]"), f_deployment)
+                "hoopla/scaling.actions", "[]"), f_deployment)
 
             if schedule_actions is None or len(schedule_actions) == 0:
                 continue
