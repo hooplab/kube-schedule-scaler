@@ -28,6 +28,9 @@ The following fields are available:
 - `minReplicas` - in combination with an `HorizontalPodAutoscaler`, will adjust the min number of replicas
 - `maxReplicas` - in combination with an `HorizontalPodAutoscaler`, will adjust the max number of replicas
 
+The values of `replicas`, `minReplicas` and `maxReplicas` can also point to an annotation value on the
+same deployment. The final value will be copied from the annotation. See example below.
+
 ### Deployment Example
 
 ```yaml
