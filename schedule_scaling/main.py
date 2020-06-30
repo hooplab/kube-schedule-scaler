@@ -31,11 +31,32 @@ def get_kube_api():
 
 api = get_kube_api()
 
+def schedule_with_annotation_values(schedule, annotations):
+    replicas = schedule.get("replicas", None)
+    replicas_annotation = annotations.get(replicas, None)
+    if replicas_annotation is not None:
+        logging.debug("replaced replicas value '{}' with value from annotation: {}".format(replicas, replicas_annotation))
+        replicas = replicas_annotation
+
+    min_replicas = schedule.get("minReplicas", None)
+    min_replicas_annotation = annotations.get(min_replicas, None)
+    if min_replicas_annotation is not None:
+        logging.debug("replaced minReplicas value '{}' with value from annotation: {}".format(min_replicas, min_replicas_annotation))
+        min_replicas = min_replicas_annotation
+
+    max_replicas = schedule.get("maxReplicas", None)
+    max_replicas_annotation = annotations.get(max_replicas, None)
+    if max_replicas_annotation is not None:
+        logging.debug("replaced maxReplicas value '{}' with value from annotation: {}".format(max_replicas, max_replicas_annotation))
+        max_replicas = max_replicas_annotation
+
+    return {**schedule, **dict(replicas=replicas, minReplicas=min_replicas, maxReplicas=max_replicas)}
+
 
 def deployments_to_scale():
     """ Getting the deployments configured for schedule scaling """
-    deployments = []
     scaling_dict = {}
+
     for namespace in list(pykube.Namespace.objects(api)):
         namespace = str(namespace)
         for deployment in Deployment.objects(api).filter(namespace=namespace):
@@ -48,9 +69,10 @@ def deployments_to_scale():
             if schedule_actions is None or len(schedule_actions) == 0:
                 continue
 
-            deployments.append([deployment.metadata["name"]])
-            scaling_dict[f_deployment] = schedule_actions
-    if not deployments:
+            # replace annotation pointers with actual values
+            scaling_dict[f_deployment] = [schedule_with_annotation_values(schedule, annotations) for schedule in schedule_actions]
+
+    if len(scaling_dict.items()) == 0:
         logging.info("No deployment is configured for schedule scaling")
 
     return scaling_dict
@@ -88,14 +110,17 @@ def get_wait_sec():
 def process_deployment(deployment, schedules):
     """ Determine actions to run for the given deployment and list of schedules """
     namespace, name = deployment.split("/")
+
     for schedule in schedules:
         # when provided, convert the values to int
         replicas = schedule.get("replicas", None)
         if replicas:
             replicas = int(replicas)
+
         min_replicas = schedule.get("minReplicas", None)
         if min_replicas:
             min_replicas = int(min_replicas)
+
         max_replicas = schedule.get("maxReplicas", None)
         if max_replicas:
             max_replicas = int(max_replicas)
