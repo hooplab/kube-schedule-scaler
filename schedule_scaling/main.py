@@ -31,26 +31,22 @@ def get_kube_api():
 
 api = get_kube_api()
 
-def schedule_with_annotation_values(schedule, annotations):
-    replicas = schedule.get("replicas", None)
-    replicas_annotation = annotations.get(replicas, None)
-    if replicas_annotation is not None:
-        logging.debug("replaced replicas value '{}' with value from annotation: {}".format(replicas, replicas_annotation))
-        replicas = replicas_annotation
 
-    min_replicas = schedule.get("minReplicas", None)
-    min_replicas_annotation = annotations.get(min_replicas, None)
-    if min_replicas_annotation is not None:
-        logging.debug("replaced minReplicas value '{}' with value from annotation: {}".format(min_replicas, min_replicas_annotation))
-        min_replicas = min_replicas_annotation
+def resolve_value(value, annotations):
+    if value is not None:
+        if value.isdigit():
+            return value
+        return annotations.get(value, None)
+    return None
 
-    max_replicas = schedule.get("maxReplicas", None)
-    max_replicas_annotation = annotations.get(max_replicas, None)
-    if max_replicas_annotation is not None:
-        logging.debug("replaced maxReplicas value '{}' with value from annotation: {}".format(max_replicas, max_replicas_annotation))
-        max_replicas = max_replicas_annotation
 
-    return {**schedule, **dict(replicas=replicas, minReplicas=min_replicas, maxReplicas=max_replicas)}
+def resolve_schedule_values(schedule, annotations):
+    replaced = dict(
+        replicas=resolve_value(schedule.get("replicas", None), annotations),
+        minReplicas=resolve_value(schedule.get("minReplicas", None), annotations),
+        maxReplicas=resolve_value(schedule.get("maxReplicas", None), annotations)
+    )
+    return {**schedule, **replaced}
 
 
 def deployments_to_scale():
@@ -70,7 +66,7 @@ def deployments_to_scale():
                 continue
 
             # replace annotation pointers with actual values
-            scaling_dict[f_deployment] = [schedule_with_annotation_values(schedule, annotations) for schedule in schedule_actions]
+            scaling_dict[f_deployment] = [resolve_schedule_values(schedule, annotations) for schedule in schedule_actions]
 
     if len(scaling_dict.items()) == 0:
         logging.info("No deployment is configured for schedule scaling")
