@@ -18,7 +18,7 @@ Just add the annotation to your `Deployment`:
 
 ```yaml
   annotations:
-    zalando.org/schedule-actions: '[{"schedule": "10 18 * * *", "replicas": "3"}]'
+    hoopla/scaling.actions: '[{"schedule": "10 18 * * *", "replicas": "3"}]'
 ```
 
 The following fields are available:
@@ -37,11 +37,12 @@ metadata:
   labels:
     application: nginx-deployment
   annotations:
-    zalando.org/schedule-actions: |
+    some-annotation-value: "3"
+    hoopla/scaling.actions: |
       [
         {"schedule": "0 7 * * Mon-Fri", "replicas": "1"},
         {"schedule": "0 19 * * Mon-Fri", "replicas": "0"},
-        {"schedule": "0 12 * * Mon-Fri", "minReplicas": "2", "maxReplicas": "3"},
+        {"schedule": "0 12 * * Mon-Fri", "minReplicas": "2", "maxReplicas": "some-annotation-value"},
         {"schedule": "0 16 * * Mon-Fri", "minReplicas": "1"}
       ]
 ```
