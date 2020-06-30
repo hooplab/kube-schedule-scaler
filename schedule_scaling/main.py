@@ -65,6 +65,11 @@ def deployments_to_scale():
             if schedule_actions is None or len(schedule_actions) == 0:
                 continue
 
+            disabled_str = annotations.get("hoopla/scaling.disabled", None)
+            if disabled_str is not None and disabled_str.lower() == "true":
+                logging.info("{} scaling schedule is disabled because of annotation 'hoopla/scaling.disabled'")
+                continue
+
             # replace annotation pointers with actual values
             scaling_dict[f_deployment] = [resolve_schedule_values(schedule, annotations) for schedule in schedule_actions]
 

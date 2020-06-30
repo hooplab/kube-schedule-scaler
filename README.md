@@ -56,6 +56,25 @@ When an `HorizontalPodAutoscaler` is managing the `Deployment`, it will ignore t
 
 In order for the `HorizontalPodAutoscaler` to be detected, it must be called with the same name as the `Deployment` that manages.
 
+## Temporarily disabling scheduled scaling
+
+You can temporarily disable scheduled scaling by adding an annotation `hoopla/scaling.disabled` with the value `true`.
+
+```yaml
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    application: nginx-deployment
+  annotations:
+    hoopla/scaling.disabled: "true"
+    hoopla/scaling.actions: |
+      [
+        {"schedule": "0 7 * * Mon-Fri", "replicas": "1"},
+        {"schedule": "0 19 * * Mon-Fri", "replicas": "0"}
+      ]
+```
+
 ## Debugging
 
 If your scaling action has not been executed for some reason, you can check with the steps below:
