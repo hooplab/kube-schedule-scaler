@@ -70,3 +70,7 @@ metadata:
 
 You can change the global log level using the `LOG_LEVEL` environment variable (e.g. `LOG_LEVEL=DEBUG`)
 and the module log level using the `SCHEDULED_SCALING_LOG_LEVEL` environment variable.
+
+## Dry run
+
+Set the `DRY_RUN` environment variable to `true` to make the kubernetes commands dry run only.

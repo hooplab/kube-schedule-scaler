@@ -24,6 +24,7 @@ class ScalingSchedule(NamedTuple):
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 SCHEDULED_SCALING_LOG_LEVEL = os.environ.get("SCHEDULED_SCALING_LOG_LEVEL", LOG_LEVEL)
+DRY_RUN = True if os.environ.get("DRY_RUN", "").lower() == "true" else False
 
 # global log config
 logging.basicConfig(
@@ -187,4 +188,4 @@ if __name__ == "__main__":
 
         logger.debug("Processing {} deployments".format(len(deployments)))
         for d, s in deployments:
-            process_deployment(d, s, dry_run=True)
+            process_deployment(d, s, dry_run=DRY_RUN)
