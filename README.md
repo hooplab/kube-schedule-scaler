@@ -18,18 +18,16 @@ Just add the annotation to your `Deployment`:
 
 ```yaml
   annotations:
-    hoopla/scaling.actions: '[{"schedule": "10 18 * * *", "replicas": "3"}]'
+    hoopla/scaling.schedule: '[{"schedule": "10 18 * * *", "replicas": "3"}]'
 ```
 
 The following fields are available:
 
 - `schedule` - cron expression for the schedule
 - `replicas` - the number of replicas to scale to
-- `minReplicas` - in combination with an `HorizontalPodAutoscaler`, will adjust the min number of replicas
-- `maxReplicas` - in combination with an `HorizontalPodAutoscaler`, will adjust the max number of replicas
 
-The values of `replicas`, `minReplicas` and `maxReplicas` can also point to an annotation value on the
-same deployment. The final value will be copied from the annotation. See example below.
+The value of `replicas` can also be a pointer to an annotation value on the same deployment.
+The final value will be copied from the annotation. See usage example for annotation pointers below.
 
 ### Deployment Example
 
@@ -41,24 +39,19 @@ metadata:
     application: nginx-deployment
   annotations:
     some-annotation-value: "3"
-    hoopla/scaling.actions: |
+    other-annotation-value: "0"
+    hoopla/scaling.schedule: |
       [
-        {"schedule": "0 7 * * Mon-Fri", "replicas": "1"},
-        {"schedule": "0 19 * * Mon-Fri", "replicas": "0"},
-        {"schedule": "0 12 * * Mon-Fri", "minReplicas": "2", "maxReplicas": "some-annotation-value"},
-        {"schedule": "0 16 * * Mon-Fri", "minReplicas": "1"}
+        {"schedule": "0 7 * * MON-FRI", "replicas": "1"},
+        {"schedule": "0 19 * * MON-FRI", "replicas": "other-annotation-value"},
+        {"schedule": "0 12 * * MON-FRI", "replicas": "5"},
+        {"schedule": "0 16 * * MON-FRI", "replicas": "some-annotation-value"}
       ]
 ```
 
-When your `Deployment` is not managed by an `HorizontalPodAutoscaler`, setting `replicas` to the desired number of replicas is sufficient.
-
-When an `HorizontalPodAutoscaler` is managing the `Deployment`, it will ignore the Deployment if `replicas` is set to `0`, so setting `replicas` to and `1` and `0` acts as a switch on/off for the application, while `minReplicas` and `maxReplicas` can be used to adjust the desired number of replicas.
-
-In order for the `HorizontalPodAutoscaler` to be detected, it must be called with the same name as the `Deployment` that manages.
-
 ## Temporarily disabling scheduled scaling
 
-You can temporarily disable scheduled scaling by adding an annotation `hoopla/scaling.disabled` with the value `true`.
+You can temporarily disable scheduled scaling by adding an annotation `hoopla/scaling.disabled` with the value `"true"`.
 
 ```yaml
 kind: Deployment
@@ -68,39 +61,12 @@ metadata:
     application: nginx-deployment
   annotations:
     hoopla/scaling.disabled: "true"
-    hoopla/scaling.actions: |
+    hoopla/scaling.schedule: |
       [
-        {"schedule": "0 7 * * Mon-Fri", "replicas": "1"},
-        {"schedule": "0 19 * * Mon-Fri", "replicas": "0"}
+        {"schedule": "0 7 * * MON-FRI", "replicas": "1"},
+        {"schedule": "0 19 * * MON-FRI", "replicas": "0"}
       ]
 ```
 
-## Debugging
-
-If your scaling action has not been executed for some reason, you can check with the steps below:
-
-```
-$ kubectl get pods -n kube-schedule-scaler
-NAME                                    READY   STATUS    RESTARTS   AGE
-kube-schedule-scaler-844b6d5888-p9tc4   1/1     Running   0          3m12s
-```
-
-Check the logs for your specific deployment:
-```
-$ kubectl logs -n kube-schedule-scaler kube-schedule-scaler-844b6d5888-p9tc4 | grep -i 'nginx'
-17-06-2020 20:11:00 INFO - main.py:131 - Deployment default/nginx scaled to 1 replicas
-17-06-2020 20:12:00 INFO - main.py:169 - HPA default/nginx minReplicas set to 3
-17-06-2020 20:12:00 INFO - main.py:171 - HPA default/nginx maxReplicas set to 4
-17-06-2020 20:13:00 INFO - main.py:169 - HPA default/nginx minReplicas set to 1
-17-06-2020 20:13:00 INFO - main.py:171 - HPA default/nginx maxReplicas set to 2
-```
-
-Check for specific deployment at specific time:
-
-```
-$ kubectl logs -n kube-schedule-scaler kube-schedule-scaler-844b6d5888-p9tc4 | grep -i 'nginx' | grep '20:12'
-17-06-2020 20:12:00 INFO - main.py:169 - HPA default/nginx minReplicas set to 3
-17-06-2020 20:12:00 INFO - main.py:171 - HPA default/nginx maxReplicas set to 4
-```
-
-You can change the log level using the `LOG_LEVEL` environment variable (e.g. `LOG_LEVEL=DEBUG`)
+You can change the global log level using the `LOG_LEVEL` environment variable (e.g. `LOG_LEVEL=DEBUG`)
+and the module log level using the `SCHEDULED_SCALING_LOG_LEVEL` environment variable.
