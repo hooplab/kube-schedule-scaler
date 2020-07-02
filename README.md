@@ -86,6 +86,9 @@ a json object. E.g.:
 }
 ```
 
+Annotation pointers are still fetched from the deployment, so it's possible to have different `replicas` values for different
+deployments even when using predefined schedules.
+
 In the deployment annotation, set the annotation `hoopla/scaling.schedule.predefined` instead of `hoopla/scaling.schedule.predefined`:
 
 ```yaml
