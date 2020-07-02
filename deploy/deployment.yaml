@@ -32,7 +32,7 @@ rules:
   resources: ["namespaces"]
   verbs: ["get", "list"]
 - apiGroups: ["apps"]
-  resources: ["deployments"]
+  resources: ["deployments", "deployments/scale"]
   verbs: ["get", "list", "patch"]
 - apiGroups: ["autoscaling", "extensions"]
   resources:
