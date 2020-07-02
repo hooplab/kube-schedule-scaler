@@ -70,7 +70,7 @@ metadata:
 
 ## Predefined/shared schedules
 
-Configure predefined schedules by passing an environment variable called `PREDEFINED_SCHEDULES` with
+Configure predefined schedules by passing the environment variable `PREDEFINED_SCHEDULES` to `schedule_scaling/main.py` with
 a json object. E.g.:
 
 ```
@@ -86,7 +86,7 @@ a json object. E.g.:
 }
 ```
 
-In the deployment annotation, set the annotation `hoopla/scaling.schedule.predefined`:
+In the deployment annotation, set the annotation `hoopla/scaling.schedule.predefined` instead of `hoopla/scaling.schedule.predefined`:
 
 ```yaml
 kind: Deployment
@@ -97,6 +97,8 @@ metadata:
   annotations:
     hoopla/scaling.schedule.predefined: predefined-schedule-a
 ```
+
+If both annotations are present, the predefined schedule takes presedence.
 
 ## Logging
 
