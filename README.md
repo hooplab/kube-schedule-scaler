@@ -98,7 +98,7 @@ metadata:
     hoopla/scaling.schedule.predefined: predefined-schedule-a
 ```
 
-If both annotations are present, the predefined schedule takes presedence.
+If both annotations are present, the predefined schedule takes precedence.
 
 ## Logging
 
