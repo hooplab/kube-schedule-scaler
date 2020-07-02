@@ -142,7 +142,7 @@ def get_wait_sec():
 
 
 def dry_run_arg(dry_run: bool):
-    return "All" if dry_run else None
+    return dict(dry_run="All") if dry_run else dict()
 
 
 def dry_run_prefix(dry_run: bool):
@@ -168,7 +168,7 @@ def scale_deployment(name: str, namespace: str, replicas: int, dry_run: bool):
     """ Scale the deployment to the given number of replicas """
     try:
         body = dict(spec=dict(replicas=replicas))
-        api.patch_namespaced_deployment_scale(name=name, namespace=namespace, body=body, dry_run=dry_run_arg(dry_run))
+        api.patch_namespaced_deployment_scale(name=name, namespace=namespace, body=body, **dry_run_arg(dry_run))
         logger.info("{}Deployment {}/{} scaled to {} replicas".format(dry_run_prefix(dry_run), namespace, name, replicas))
     except Exception as e:
         logger.error("Exception raised while updating deployment {}/{}".format(namespace, name))
