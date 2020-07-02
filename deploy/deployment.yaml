@@ -67,6 +67,14 @@ spec:
         env:
           - name: TIMEZONE
             value: Europe/Oslo
+          - name: PREDEFINED_SCHEDULES
+            value: |
+              {
+                "example-predefined-schedule": [
+                  {"schedule": "0 19 * * MON-FRI", "replicas": "off.replicas"},
+                  {"schedule": "0 7 * * MON-FRI", "replicas": "on.replicas"}
+                ]
+              }
         resources:
           limits:
             memory: 128Mi
