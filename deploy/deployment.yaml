@@ -64,6 +64,9 @@ spec:
       - name: kube-schedule-scaler
         image: "hoopla/kube-schedule-scaler:0.0.2"
         imagePullPolicy: Always
+        env:
+          - name: TIMEZONE
+            value: Europe/Oslo
         resources:
           limits:
             memory: 128Mi

@@ -7,6 +7,7 @@ from datetime import datetime, timezone, timedelta
 from time import sleep
 from typing import Optional, NewType, NamedTuple, List, Dict
 
+import dateutil.tz
 from kubernetes import client, config, watch
 from kubernetes.config.config_exception import ConfigException
 from croniter import croniter
@@ -24,8 +25,11 @@ class ScalingSchedule(NamedTuple):
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 SCHEDULED_SCALING_LOG_LEVEL = os.environ.get("SCHEDULED_SCALING_LOG_LEVEL", LOG_LEVEL)
+TIMEZONE = os.environ.get("TIMEZONE", "UTC")
 DRY_RUN = True if os.environ.get("DRY_RUN", "").lower() == "true" else False
 PREDEFINED_SCHEDULES_JSON = os.environ.get("PREDEFINED_SCHEDULES", "{}")
+
+tz = dateutil.tz.gettz(TIMEZONE)
 
 # global log config
 logging.basicConfig(
@@ -142,19 +146,19 @@ def deployments_to_scale(predefined_schedules: Dict[str, List[RawScalingSchedule
     return scaling_dict
 
 
-def get_delta_sec(schedule):
+def get_delta_sec(schedule_expr: str) -> int:
     """ Returns the number of seconds passed since last occurence of the given cron expression """
     # get current time
-    now = datetime.now()
+    now = datetime.now(tz=tz)
     # get the last previous occurrence of the cron expression
-    time = croniter(schedule, now).get_prev()
+    time = croniter(schedule_expr, now).get_prev()
     # convert now to unix timestamp
-    now = now.replace(tzinfo=timezone.utc).timestamp()
+    timestamp = now.timestamp()
     # return the delta
-    return now - time
+    return timestamp - time
 
 
-def get_wait_sec():
+def get_wait_sec() -> int:
     """ Return the number of seconds to wait before the next minute """
     now = datetime.now()
     future = datetime(now.year, now.month, now.day, now.hour, now.minute) + timedelta(minutes=1)
@@ -165,7 +169,7 @@ def dry_run_arg(dry_run: bool):
     return dict(dry_run="All") if dry_run else dict()
 
 
-def dry_run_prefix(dry_run: bool):
+def dry_run_prefix(dry_run: bool) -> str:
     return "[DRY RUN] " if dry_run else ""
 
 
