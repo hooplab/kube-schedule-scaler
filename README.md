@@ -73,7 +73,7 @@ metadata:
 Configure predefined schedules by passing the environment variable `PREDEFINED_SCHEDULES` to `schedule_scaling/main.py` with
 a json object. E.g.:
 
-```
+```json
 {
   "predefined-schedule-a": [
     {"schedule": "0 7 * * MON-FRI", "replicas": "1"},
