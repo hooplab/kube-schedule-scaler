@@ -68,6 +68,38 @@ metadata:
       ]
 ```
 
+## Predefined/shared schedules
+
+Configure predefined schedules by passing an environment variable called `PREDEFINED_SCHEDULES` with
+a json object. E.g.:
+
+```
+{
+  "predefined-schedule-a": [
+    {"schedule": "0 7 * * MON-FRI", "replicas": "1"},
+    {"schedule": "0 19 * * MON-FRI", "replicas": "0"}
+  ],
+  "predefined-schedule-b": [
+    {"schedule": "* 0/2 * * *", "replicas": "1"},
+    {"schedule": "* 1/2 * * *", "replicas": "0"}
+  ]
+}
+```
+
+In the deployment annotation, set the annotation `hoopla/scaling.schedule.predefined`:
+
+```yaml
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    application: nginx-deployment
+  annotations:
+    hoopla/scaling.schedule.predefined: predefined-schedule-a
+```
+
+## Logging
+
 You can change the global log level using the `LOG_LEVEL` environment variable (e.g. `LOG_LEVEL=DEBUG`)
 and the module log level using the `SCHEDULED_SCALING_LOG_LEVEL` environment variable.
 

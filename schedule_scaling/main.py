@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime, timezone, timedelta
 from time import sleep
-from typing import Optional, NewType, NamedTuple, List
+from typing import Optional, NewType, NamedTuple, List, Dict
 
 from kubernetes import client, config, watch
 from kubernetes.config.config_exception import ConfigException
@@ -25,6 +25,7 @@ class ScalingSchedule(NamedTuple):
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 SCHEDULED_SCALING_LOG_LEVEL = os.environ.get("SCHEDULED_SCALING_LOG_LEVEL", LOG_LEVEL)
 DRY_RUN = True if os.environ.get("DRY_RUN", "").lower() == "true" else False
+PREDEFINED_SCHEDULES_JSON = os.environ.get("PREDEFINED_SCHEDULES", "{}")
 
 # global log config
 logging.basicConfig(
@@ -81,13 +82,20 @@ def parse_schedules(schedules_json: str, deployment: str) -> List[RawScalingSche
         if not isinstance(parsed, list):
             raise TypeError("annotation hoopla/scaling.schedule is not a json list")
         return [RawScalingSchedule(**v) for v in parsed]
-    except (TypeError, json.decoder.JSONDecodeError) as err:
+    except (json.decoder.JSONDecodeError) as err:
         logger.error("{} - Error in parsing JSON {}".format(deployment, schedules_json))
         logger.exception(err)
         return []
 
 
-def deployments_to_scale() -> List[ScalingSchedule]:
+def get_predefined_schedule(name: str, predefined_schedules: Dict[str, List[RawScalingSchedule]]) -> List[RawScalingSchedule]:
+    schedule = predefined_schedules.get(name, None)
+    if schedule is None:
+        raise KeyError("could not find predefined schedule named '{}'".format(name))
+    return schedule
+
+
+def deployments_to_scale(predefined_schedules: Dict[str, List[RawScalingSchedule]]) -> List[ScalingSchedule]:
     """ Getting the deployments configured for schedule scaling """
     scaling_dict = {}
 
@@ -99,7 +107,19 @@ def deployments_to_scale() -> List[ScalingSchedule]:
         f_deployment = "{}/{}".format(namespace, deployment_name)
 
         annotations = deployment.metadata.annotations
-        scaling_schedule = parse_schedules(annotations.get("hoopla/scaling.schedule", "[]"), f_deployment)
+        schedule_name = annotations.get("hoopla/scaling.schedule.predefined", None)
+
+        try:
+            if schedule_name is not None:
+                scaling_schedule = get_predefined_schedule(schedule_name, predefined_schedules)
+                logger.debug("{} - found predefined schedule '{}'".format(f_deployment, schedule_name))
+            else:
+                scaling_schedule = parse_schedules(annotations.get("hoopla/scaling.schedule", "[]"), f_deployment)
+                logger.debug("{} - found schedule".format(f_deployment))
+        except Exception as e:
+            logger.error("{} - could not load schedule".format(f_deployment))
+            logger.exception(e)
+            scaling_schedule = []
 
         if scaling_schedule is None or len(scaling_schedule) == 0:
             continue
@@ -175,8 +195,26 @@ def scale_deployment(name: str, namespace: str, replicas: int, dry_run: bool):
         logger.exception(e)
 
 
+def parse_predefined_schedules(input: str) -> Dict[str, List[RawScalingSchedule]]:
+    return {k: [RawScalingSchedule(**i) for i in v] for k, v in json.loads(input).items()}
+
+
 if __name__ == "__main__":
-    logger.info("Main loop started")
+    logger.info("{}Main loop started".format(dry_run_prefix(DRY_RUN)))
+
+    if DRY_RUN:
+        logger.info("* DRY RUN IS ENABLED")
+
+    try:
+        predefined_schedules = parse_predefined_schedules(PREDEFINED_SCHEDULES_JSON)
+    except ValueError as e:
+        predefined_schedules = dict()
+        logger.error("could not parse predefined schedules")
+        logger.exception(e)
+
+    if len(predefined_schedules.keys()) > 0:
+        logger.debug("found predefined schedules")
+        logger.debug(json.dumps(predefined_schedules, indent=2))
 
     while True:
         wait_sec = get_wait_sec()
@@ -184,7 +222,7 @@ if __name__ == "__main__":
         sleep(wait_sec)
 
         logger.debug("Fetching deployments")
-        deployments = deployments_to_scale().items()
+        deployments = deployments_to_scale(predefined_schedules).items()
 
         logger.debug("Processing {} deployments".format(len(deployments)))
         for d, s in deployments:
